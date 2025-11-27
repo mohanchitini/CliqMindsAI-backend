@@ -35,7 +35,3 @@ channel = "stable-25_05"
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 41061
-externalPort = 3000
