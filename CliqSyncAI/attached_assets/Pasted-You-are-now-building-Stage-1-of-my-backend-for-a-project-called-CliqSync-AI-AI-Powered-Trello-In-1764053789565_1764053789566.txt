@@ -1,0 +1,178 @@
+You are now building Stage-1 of my backend for a project called 
+"CliqSync AI — AI-Powered Trello Integration for Zoho Cliq".
+
+IMPORTANT:
+- This is ONLY Stage-1 backend work.
+- DO NOT create anything related to Zoho Cliq extension, Deluge, or widgets.
+- Build ONLY the backend logic (Trello OAuth + Trello API + Webhooks + AI).
+- Use Node.js + Express.
+- Use JavaScript (not TypeScript).
+- Use a clean folder structure.
+
+===========================================================
+STAGE 1 – BACKEND REQUIREMENTS
+===========================================================
+
+🔵 TECHNOLOGY STACK:
+- Node.js (v18+)
+- Express.js
+- MongoDB or SQLite (whichever is easier to implement)
+- Axios or Fetch for API calls
+- dotenv for environment variables
+
+===========================================================
+1️⃣ BASIC BACKEND SETUP
+===========================================================
+
+Create a production-ready backend with:
+
+- server.js (entry point)
+- Routes folder
+- Controllers folder
+- Services folder
+- Config folder
+- Utils folder
+- models folder (DB schema)
+
+Add a basic test route:
+
+GET /api/health → returns:
+{
+  "status": "OK",
+  "service": "CliqSync AI Backend"
+}
+
+===========================================================
+2️⃣ TRELLO OAUTH IMPLEMENTATION
+===========================================================
+
+Create full OAuth flow:
+
+A. Route: GET /auth/trello/start
+- Redirect user to Trello OAuth authorization URL
+- Use state parameter for security
+
+B. Route: GET /auth/trello/callback
+- Exchange "code" for "access_token"
+- Store token in DB with a unique userId
+- Redirect user to success page (simple HTML page)
+
+C. DB storage:
+Store:
+- trelloAccessToken
+- expiresAt (if provided)
+- refreshToken (if provided)
+
+===========================================================
+3️⃣ TRELLO API WRAPPER (CORE)
+===========================================================
+
+Create a reusable TrelloService with functions:
+
+- getBoards(userId)
+- getLists(userId, boardId)
+- getCards(userId, listId)
+- getCardDetails(userId, cardId)
+- createCard(userId, listId, title, description)
+- updateCard(userId, cardId, updates)
+- moveCard(userId, cardId, targetListId)
+
+Each function should:
+- Read token from DB
+- Call Trello API using Axios
+- Return JSON response
+
+===========================================================
+4️⃣ EXPOSE REST ENDPOINTS
+===========================================================
+
+Create REST APIs:
+
+GET    /api/trello/boards
+GET    /api/trello/lists?board=BOARD_ID
+GET    /api/trello/cards?list=LIST_ID
+GET    /api/trello/cards/:cardId
+POST   /api/trello/cards (body: listId, title, description)
+PATCH  /api/trello/cards/:cardId
+POST   /api/trello/cards/:cardId/move (body: targetListId)
+
+===========================================================
+5️⃣ TRELLO WEBHOOKS (EVENT LISTENER)
+===========================================================
+
+Create endpoint:
+
+POST /webhooks/trello
+
+This must:
+- Verify webhook setup request from Trello
+- Parse card events:
+  - card created
+  - card updated
+  - card moved
+- Store each event in DB "trello_events" table/collection
+
+Also expose:
+
+GET /api/events/recent
+→ returns last 20 Trello events
+
+===========================================================
+6️⃣ AI INTEGRATION (STAGE-1 AI)
+===========================================================
+
+Integrate OpenAI or Gemini API.
+
+Create AIService.js with functions:
+
+- summarizeCard(cardData)
+- generateSubtasks(cardData)
+- classifyPriority(cardData)
+- extractTaskFromChat(text)
+
+Create REST endpoints:
+
+POST /api/ai/summarize     { cardId }
+POST /api/ai/subtasks      { cardId }
+POST /api/ai/priority      { cardId }
+POST /api/ai/chat-to-task  { text, listId }
+
+Flow:
+- Fetch card details using TrelloService
+- Call AI model
+- Return structured JSON
+
+===========================================================
+7️⃣ ENVIRONMENT VARIABLES
+===========================================================
+
+Use .env for:
+- TRELLO_KEY
+- TRELLO_SECRET
+- TRELLO_REDIRECT_URI
+- OPENAI_API_KEY or GEMINI_API_KEY
+- DB_URL or DB_PATH
+- JWT_SECRET (if needed)
+
+===========================================================
+8️⃣ FINAL EXPECTED OUTPUT
+===========================================================
+
+Deliver:
+- Full backend folder structure
+- Node.js + Express server
+- Trello OAuth flow
+- Trello API service layer
+- Trello webhooks
+- AI service layer
+- REST API endpoints
+- Database models
+- All necessary middleware
+- Example .env template
+- README with instructions
+
+===========================================================
+
+Make sure everything is clean, modular, and production-ready.
+
+Generate the entire Stage-1 backend now.

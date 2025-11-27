@@ -1,0 +1,21 @@
+{
+  "name": "cliqsync-ai-backend",
+  "version": "1.0.0",
+  "description": "CliqSync AI - AI-Powered Trello Integration Backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["trello", "ai", "zoho", "cliq"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1",
+    "axios": "^1.6.2",
+    "better-sqlite3": "^9.2.2",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2"
+  }
+}
