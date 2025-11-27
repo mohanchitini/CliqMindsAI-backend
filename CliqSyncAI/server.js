@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
@@ -5,11 +6,27 @@ const config = require("./config/env");
 require("./config/database");
 
 const app = express();
-require("dotenv").config();
-console.log("Loaded BACKEND_API_KEY:", process.env.BACKEND_API_KEY);
 
-// API Key Middleware
+// --- PUBLIC ROUTES (NO API KEY) ---
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "OK",
+    service: "CliqSync AI Backend",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get("/", (req, res) => {
+  res.send("Backend is running!");
+});
+
+// --- API KEY MIDDLEWARE ---
 app.use((req, res, next) => {
+  // Allow public routes
+  if (req.path === "/api/health" || req.path === "/") {
+    return next();
+  }
+
   const key = req.headers["x-api-key"];
 
   if (!key || key !== process.env.BACKEND_API_KEY) {
@@ -21,37 +38,24 @@ app.use((req, res, next) => {
   next();
 });
 
+// --- MIDDLEWARE ---
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get("/api/health", (req, res) => {
-  res.json({
-    status: "OK",
-    service: "CliqSync AI Backend",
-    timestamp: new Date().toISOString(),
-  });
-});
-app.get("/", (req, res) => {
-  res.send("Backend is running!");
-});
+// --- PROTECTED ROUTES ---
+app.use("/auth", require("./routes/auth"));
+app.use("/api/trello", require("./routes/trello"));
+app.use("/webhooks", require("./routes/webhooks"));
+app.use("/api/ai", require("./routes/ai"));
+app.use("/api/events", require("./routes/events"));
 
-const authRoutes = require("./routes/auth");
-const trelloRoutes = require("./routes/trello");
-const webhookRoutes = require("./routes/webhooks");
-const aiRoutes = require("./routes/ai");
-const eventRoutes = require("./routes/events");
-
-app.use("/auth", authRoutes);
-app.use("/api/trello", trelloRoutes);
-app.use("/webhooks", webhookRoutes);
-app.use("/api/ai", aiRoutes);
-app.use("/api/events", eventRoutes);
-
+// --- 404 HANDLER ---
 app.use((req, res) => {
   res.status(404).json({ error: "Endpoint not found" });
 });
 
+// --- ERROR HANDLER ---
 app.use((err, req, res, next) => {
   console.error("Server error:", err);
   res
@@ -59,7 +63,9 @@ app.use((err, req, res, next) => {
     .json({ error: "Internal server error", message: err.message });
 });
 
-const PORT = config.port;
+// --- START SERVER ---
+const PORT = process.env.PORT || config.port || 3000;
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`CliqSync AI Backend running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/api/health`);
