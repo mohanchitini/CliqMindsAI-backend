@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 module.exports = {
-  port: process.env.PORT || 5000,
+  port: process.env.PORT || 3000,
   trello: {
     key: process.env.TRELLO_KEY,
     secret: process.env.TRELLO_SECRET,
