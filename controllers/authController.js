@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const User = require('../models/User');
-const config = require('../config/env');
+const config = require('../../config/env');
 
 const authSessions = new Map();
 const SESSION_TIMEOUT = 10 * 60 * 1000;

@@ -1,6 +1,8 @@
-import { drizzle } from "drizzle-orm/neon-serverless";
-import { Pool, neonConfig } from "@neondatabase/serverless";
-import ws from "ws";
+// server/storage.ts
+
+import sqlite3 from "sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+
 import {
   users,
   activityLogs,
@@ -15,186 +17,144 @@ import {
   InsertSettings,
   Settings,
 } from "../shared/schema";
+
 import { eq, desc, sql } from "drizzle-orm";
 
-neonConfig.webSocketConstructor = ws;
+const dbFile = process.env.DATABASE_FILE || "database.sqlite";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL must be set");
-}
+// Initialize SQLite (NO COMPILATION REQUIRED)
+sqlite3.verbose();
+const sqlite = new sqlite3.Database(dbFile);
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const db = drizzle({ client: pool });
+// Drizzle connection
+const db = drizzle(sqlite);
 
-export interface IStorage {
-  getUsers(): Promise<User[]>;
-  getUserById(id: number): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
-  deleteUser(id: number): Promise<boolean>;
-  
-  getActivityLogs(limit?: number): Promise<ActivityLog[]>;
-  getActivityLogById(id: number): Promise<ActivityLog | undefined>;
-  createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
-  updateActivityLog(id: number, log: Partial<InsertActivityLog>): Promise<ActivityLog | undefined>;
-  deleteActivityLog(id: number): Promise<boolean>;
-  
-  getAnalytics(): Promise<Analytics[]>;
-  getAnalyticsById(id: number): Promise<Analytics | undefined>;
-  createAnalytics(data: InsertAnalytics): Promise<Analytics>;
-  updateAnalytics(id: number, data: Partial<InsertAnalytics>): Promise<Analytics | undefined>;
-  deleteAnalytics(id: number): Promise<boolean>;
-  getDashboardStats(): Promise<{
-    totalUsers: number;
-    activeUsers: number;
-    totalActivity: number;
-    growthRate: number;
-  }>;
-
-  getSettings(): Promise<Settings[]>;
-  getSettingByKey(key: string): Promise<Settings | undefined>;
-  createSetting(setting: InsertSettings): Promise<Settings>;
-  updateSetting(key: string, value: string): Promise<Settings | undefined>;
-  deleteSetting(key: string): Promise<boolean>;
-}
-
-class Storage implements IStorage {
+export class Storage {
+  // USERS
   async getUsers(): Promise<User[]> {
-    return await db.select().from(users).orderBy(desc(users.createdAt));
+    return db.select().from(users).orderBy(desc(users.createdAt)).all();
   }
 
   async getUserById(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    return db.select().from(users).where(eq(users.id, id)).get();
   }
 
   async createUser(user: InsertUser): Promise<User> {
-    const [newUser] = await db.insert(users).values(user).returning();
-    return newUser;
+    return db.insert(users).values(user).returning().get();
   }
 
   async updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined> {
-    const [updatedUser] = await db
-      .update(users)
-      .set(user)
-      .where(eq(users.id, id))
-      .returning();
-    return updatedUser;
+    return db.update(users).set(user).where(eq(users.id, id)).returning().get();
   }
 
   async deleteUser(id: number): Promise<boolean> {
-    const result = await db.delete(users).where(eq(users.id, id));
-    return result.rowCount !== null && result.rowCount > 0;
+    const result = db.delete(users).where(eq(users.id, id)).run();
+    return result.changes > 0;
   }
 
-  async getActivityLogs(limit: number = 10): Promise<ActivityLog[]> {
-    return await db
+  // ACTIVITY LOGS
+  async getActivityLogs(limit = 10): Promise<ActivityLog[]> {
+    return db
       .select()
       .from(activityLogs)
       .orderBy(desc(activityLogs.timestamp))
-      .limit(limit);
+      .limit(limit)
+      .all();
   }
 
   async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
-    const [newLog] = await db.insert(activityLogs).values(log).returning();
-    return newLog;
+    return db.insert(activityLogs).values(log).returning().get();
   }
 
   async getActivityLogById(id: number): Promise<ActivityLog | undefined> {
-    const [log] = await db.select().from(activityLogs).where(eq(activityLogs.id, id));
-    return log;
+    return db.select().from(activityLogs).where(eq(activityLogs.id, id)).get();
   }
 
-  async updateActivityLog(id: number, log: Partial<InsertActivityLog>): Promise<ActivityLog | undefined> {
-    const [updatedLog] = await db
-      .update(activityLogs)
-      .set(log)
-      .where(eq(activityLogs.id, id))
-      .returning();
-    return updatedLog;
+  async updateActivityLog(
+    id: number,
+    log: Partial<InsertActivityLog>
+  ): Promise<ActivityLog | undefined> {
+    return db.update(activityLogs).set(log).where(eq(activityLogs.id, id)).returning().get();
   }
 
   async deleteActivityLog(id: number): Promise<boolean> {
-    const result = await db.delete(activityLogs).where(eq(activityLogs.id, id));
-    return result.rowCount !== null && result.rowCount > 0;
+    return db.delete(activityLogs).where(eq(activityLogs.id, id)).run().changes > 0;
   }
 
+  // ANALYTICS
   async getAnalytics(): Promise<Analytics[]> {
-    return await db.select().from(analytics).orderBy(desc(analytics.date));
+    return db.select().from(analytics).orderBy(desc(analytics.date)).all();
   }
 
   async getAnalyticsById(id: number): Promise<Analytics | undefined> {
-    const [data] = await db.select().from(analytics).where(eq(analytics.id, id));
-    return data;
+    return db.select().from(analytics).where(eq(analytics.id, id)).get();
   }
 
   async createAnalytics(data: InsertAnalytics): Promise<Analytics> {
-    const [newData] = await db.insert(analytics).values(data).returning();
-    return newData;
+    return db.insert(analytics).values(data).returning().get();
   }
 
-  async updateAnalytics(id: number, data: Partial<InsertAnalytics>): Promise<Analytics | undefined> {
-    const [updatedData] = await db
-      .update(analytics)
-      .set(data)
-      .where(eq(analytics.id, id))
-      .returning();
-    return updatedData;
+  async updateAnalytics(
+    id: number,
+    data: Partial<InsertAnalytics>
+  ): Promise<Analytics | undefined> {
+    return db.update(analytics).set(data).where(eq(analytics.id, id)).returning().get();
   }
 
   async deleteAnalytics(id: number): Promise<boolean> {
-    const result = await db.delete(analytics).where(eq(analytics.id, id));
-    return result.rowCount !== null && result.rowCount > 0;
+    return db.delete(analytics).where(eq(analytics.id, id)).run().changes > 0;
   }
 
+  // DASHBOARD
   async getDashboardStats() {
-    const totalUsersResult = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(users);
-    
-    const activeUsersResult = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(users)
-      .where(eq(users.status, "active"));
-    
-    const totalActivityResult = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(activityLogs);
+    const totalUsers =
+      db.select({ count: sql<number>`count(*)` }).from(users).get()?.count ?? 0;
+
+    const activeUsers =
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(eq(users.status, "active"))
+        .get()?.count ?? 0;
+
+    const totalActivity =
+      db.select({ count: sql<number>`count(*)` }).from(activityLogs).get()?.count ?? 0;
 
     return {
-      totalUsers: totalUsersResult[0]?.count || 0,
-      activeUsers: activeUsersResult[0]?.count || 0,
-      totalActivity: totalActivityResult[0]?.count || 0,
+      totalUsers,
+      activeUsers,
+      totalActivity,
       growthRate: 12.5,
     };
   }
 
+  // SETTINGS
   async getSettings(): Promise<Settings[]> {
-    return await db.select().from(settings).orderBy(settings.key);
+    return db.select().from(settings).orderBy(settings.key).all();
   }
 
   async getSettingByKey(key: string): Promise<Settings | undefined> {
-    const [setting] = await db.select().from(settings).where(eq(settings.key, key));
-    return setting;
+    return db.select().from(settings).where(eq(settings.key, key)).get();
   }
 
   async createSetting(setting: InsertSettings): Promise<Settings> {
-    const [newSetting] = await db.insert(settings).values(setting).returning();
-    return newSetting;
+    return db.insert(settings).values(setting).returning().get();
   }
 
-  async updateSetting(key: string, value: string): Promise<Settings | undefined> {
-    const [updatedSetting] = await db
+  async updateSetting(
+    key: string,
+    value: string
+  ): Promise<Settings | undefined> {
+    return db
       .update(settings)
-      .set({ value, updatedAt: new Date() })
+      .set({ value, updatedAt: new Date().toISOString() })
       .where(eq(settings.key, key))
-      .returning();
-    return updatedSetting;
+      .returning()
+      .get();
   }
 
   async deleteSetting(key: string): Promise<boolean> {
-    const result = await db.delete(settings).where(eq(settings.key, key));
-    return result.rowCount !== null && result.rowCount > 0;
+    return db.delete(settings).where(eq(settings.key, key)).run().changes > 0;
   }
 }
 

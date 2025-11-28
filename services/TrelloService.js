@@ -1,6 +1,6 @@
 const axios = require('axios');
 const User = require('../models/User');
-const config = require('../config/env');
+const config = require('../../config/env');
 
 class TrelloService {
   static async getUserToken(userId) {

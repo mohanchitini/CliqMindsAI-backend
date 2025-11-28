@@ -1,19 +1,42 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import { registerRoutes } from "./routes";
+import bodyParser from "body-parser";
 
 const app = express();
-const PORT = parseInt(process.env.PORT || "3000", 10);
 
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
 
-registerRoutes(app);
-
+// HEALTH CHECK
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
+  res.json({
+    status: "OK",
+    service: "CliqMinds AI Backend",
+    time: new Date().toISOString(),
+  });
 });
 
+// API KEY MIDDLEWARE
+app.use((req, res, next) => {
+  if (req.path === "/api/health") return next();
+
+  const key = req.headers["x-api-key"];
+  if (!key || key !== process.env.BACKEND_API_KEY) {
+    return res.status(403).json({ error: "Unauthorized" });
+  }
+  next();
+});
+
+// ROUTES
+app.use("/api/events", (req, res) =>
+  res.json({ message: "Events Route Working" })
+);
+
+// PORT + HOST
+const PORT = process.env.PORT || 3000;
+
+// ⭐ SHOW CLICKABLE URL HERE ⭐
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Cliq Minds Backend running on port ${PORT}`);
+  console.log(`Backend running at http://localhost:${PORT}`);
 });

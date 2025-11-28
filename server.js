@@ -11,7 +11,7 @@ const app = express();
 app.get("/api/health", (req, res) => {
   res.json({
     status: "OK",
-    service: "CliqSync AI Backend",
+    service: "CliqMinds AI Backend",
     timestamp: new Date().toISOString(),
   });
 });
@@ -67,6 +67,6 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || config.port || 3000;
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`CliqSync AI Backend running on port ${PORT}`);
+  console.log(`CliqMinds AI Backend running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/api/health`);
 });

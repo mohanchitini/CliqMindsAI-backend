@@ -1,14 +1,16 @@
-import { pgTable, text, serial, timestamp, integer, boolean } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+// USERS TABLE
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   role: text("role").notNull().default("user"),
   status: text("status").notNull().default("active"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({
@@ -19,12 +21,13 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
-export const activityLogs = pgTable("activity_logs", {
-  id: serial("id").primaryKey(),
+// ACTIVITY LOGS
+export const activityLogs = sqliteTable("activity_logs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").references(() => users.id),
   action: text("action").notNull(),
   description: text("description").notNull(),
-  timestamp: timestamp("timestamp").notNull().defaultNow(),
+  timestamp: text("timestamp").notNull().default(sql`CURRENT_TIMESTAMP`)
 });
 
 export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
@@ -35,11 +38,12 @@ export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type ActivityLog = typeof activityLogs.$inferSelect;
 
-export const analytics = pgTable("analytics", {
-  id: serial("id").primaryKey(),
+// ANALYTICS
+export const analytics = sqliteTable("analytics", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   metric: text("metric").notNull(),
   value: integer("value").notNull(),
-  date: timestamp("date").notNull().defaultNow(),
+  date: text("date").notNull().default(sql`CURRENT_TIMESTAMP`)
 });
 
 export const insertAnalyticsSchema = createInsertSchema(analytics).omit({
@@ -50,12 +54,13 @@ export const insertAnalyticsSchema = createInsertSchema(analytics).omit({
 export type InsertAnalytics = z.infer<typeof insertAnalyticsSchema>;
 export type Analytics = typeof analytics.$inferSelect;
 
-export const settings = pgTable("settings", {
-  id: serial("id").primaryKey(),
+// SETTINGS
+export const settings = sqliteTable("settings", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   key: text("key").notNull().unique(),
   value: text("value").notNull(),
   description: text("description"),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`)
 });
 
 export const insertSettingsSchema = createInsertSchema(settings).omit({
