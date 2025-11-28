@@ -34,7 +34,8 @@ app.use("/api/events", (req, res) =>
 );
 
 // PORT + HOST
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
+
 
 // ⭐ SHOW CLICKABLE URL HERE ⭐
 app.listen(PORT, "0.0.0.0", () => {
